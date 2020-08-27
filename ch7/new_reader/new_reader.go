@@ -21,6 +21,7 @@ func (r *ReadString) Read(p []byte) (n int, err error) {
 	return
 }
 
+// Exercise 7.4
 func NewReader(s string) io.Reader {
 	return &ReadString{s: s, i:0}
 }
