@@ -12,9 +12,9 @@ func TestSort(t *testing.T) {
 
 func TestTreeString(t *testing.T) {
 	var a *tree
-	a = a.Add(10)
-	a = a.Add(9)
-	a = a.Add(1)
+	a = Add(a, 10)
+	a = Add(a, 9)
+	a = Add(a, 1)
 
 	t.Logf("t=%s", a)
 }

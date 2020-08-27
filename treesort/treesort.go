@@ -9,16 +9,16 @@ type tree struct {
 	left, right *tree
 }
 
-func (t *tree) Add(value int) *tree {
+func Add(t *tree, value int) *tree {
 	if t == nil {
-		t = new(tree)
-		t.value = value
-		return t
+		t1 := new(tree)
+		t1.value = value
+		return t1
 	}
 	if value < t.value {
-		t.left = t.left.Add(value)
+		t.left = Add(t.left, value)
 	} else {
-		t.right = t.right.Add(value)
+		t.right = Add(t.right, value)
 	}
 	return t
 }
@@ -36,9 +36,8 @@ func appendValues(values []int, t *tree) []int {
 func Sort(values []int) {
 	var root *tree
 	for _, v := range values {
-		root = root.Add(v)
+		root = Add(root, v)
 	}
-	// log.Printf("root=%s\n", root)
 	appendValues(values[:0], root)
 }
 
