@@ -1,12 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"golang.org/x/net/html"
 )
 
 func visit(links []string, n *html.Node) []string {
-	fmt.Println(n.Data)
 	if n.Type == html.ElementNode && n.Data == "a" {
 		for _, v := range n.Attr {
 			if v.Key == "href" {
@@ -15,7 +13,7 @@ func visit(links []string, n *html.Node) []string {
 		}
 	}
 
-	for c := n.FirstChild; c != nil; c = n.NextSibling {
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
 		links = visit(links, c)
 	}
 
