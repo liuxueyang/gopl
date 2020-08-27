@@ -2,7 +2,7 @@ package counting_writer
 
 import (
 	"fmt"
-	"gitee.com/liuxueyang/gopl/counter"
+	"gitee.com/liuxueyang/gopl/ch7/counter"
 	"testing"
 )
 
