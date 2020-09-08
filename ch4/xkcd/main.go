@@ -21,6 +21,20 @@ var _ = `
 }
 `
 
+type Xkcd struct {
+	Num        int32
+	Month      string
+	Year       string
+	Link       string
+	News       string
+	SafeTitle  string `json:"safe_title"`
+	Transcript string
+	Alt        string
+	Img        string
+	Title      string
+	Day        string
+}
+
 func main() {
 
 }
