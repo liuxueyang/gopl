@@ -1,7 +1,9 @@
 package main
 
 import (
+	"gitee.com/liuxueyang/gopl/ch4/github"
 	"log"
+	"os"
 	"text/template"
 	"time"
 )
@@ -24,10 +26,11 @@ var report1 = template.Must(
 		Parse(templ))
 
 func main() {
-	report, err := template.New("report").
-		Funcs(template.FuncMap{"daysAgo": daysAgo}).
-		Parse(templ)
+	result, err := github.SearchIssues(os.Args[1:])
 	if err != nil {
+		log.Fatal(err)
+	}
+	if err := report1.Execute(os.Stdout, result); err != nil {
 		log.Fatal(err)
 	}
 }
