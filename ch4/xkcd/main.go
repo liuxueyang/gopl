@@ -1,5 +1,11 @@
 package main
 
+import (
+	"fmt"
+	"net/http"
+	"log"
+)
+
 var URL = "https://xkcd.com/"
 
 var _ = `
@@ -33,6 +39,17 @@ type Xkcd struct {
 	Img        string
 	Title      string
 	Day        string
+}
+
+func fetch(num int32) {
+	url := fmt.
+		Sprintf("%s%d/info.0.json", URL, num)
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	defer resp.Body.Close()
 }
 
 func main() {
