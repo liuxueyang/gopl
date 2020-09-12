@@ -98,3 +98,5 @@ func TestEval(t *testing.T) {
 		}
 	}
 }
+
+// Exercise 7.13, 7.14, 7.15, 7.16 暂时先不做，研究一下Parse的实现之后再做。
