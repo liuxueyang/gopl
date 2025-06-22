@@ -56,16 +56,14 @@ func main() {
 	fmt.Printf("Project %s created successfully\n", *dir_name)
 }
 
-const binaryFile = `
-package main
+const binaryFile = `package main
 
 func main() {
 
 }
 `
 
-const libraryFile = `
-package {{.LibName}}
+const libraryFile = `package {{.LibName}}
 
 `
 
