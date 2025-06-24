@@ -92,7 +92,8 @@ func (tm *TaskManager) SetPolicy(policy SchedulePolicy) {
 		return
 	}
 
-	if policy == FIFO {
+	switch policy {
+	case FIFO:
 		for len(*tm.tasksHeap) > 0 {
 			task := heap.Pop(tm.tasksHeap).(Task)
 			tm.tasks = append(tm.tasks, task)
@@ -102,7 +103,7 @@ func (tm *TaskManager) SetPolicy(policy SchedulePolicy) {
 			return tm.tasks[i].ID < tm.tasks[j].ID
 		})
 		tm.tasksHeap = nil
-	} else if policy == SRTF {
+	case SRTF:
 		tm.tasksHeap = &TaskHeap{}
 		for _, task := range tm.tasks {
 			heap.Push(tm.tasksHeap, task)
@@ -121,9 +122,10 @@ func (tm *TaskManager) AddTasks(task []Task) {
 		task.ID = tm.nextID
 		tm.nextID++
 
-		if tm.policy == FIFO {
+		switch tm.policy {
+		case FIFO:
 			tm.tasks = append(tm.tasks, task)
-		} else if tm.policy == SRTF {
+		case SRTF:
 			if tm.tasksHeap == nil {
 				tm.tasksHeap = &TaskHeap{}
 			}

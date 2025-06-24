@@ -20,7 +20,7 @@ func remove_executable(path string) ([]string, error) {
 				files = append(files, filePath)
 
 				// prompt for the user to delete the file
-				fmt.Printf("Do you want to delete the file %s? (y/n): ", filePath)
+				fmt.Printf("%s\ny: delete the file.\nn: Do not delete the file.\nk: Add the file to allowlist.\n(y/n/k): ", filePath)
 				var response string
 				fmt.Scanln(&response)
 				if response == "y" || response == "Y" {
@@ -73,16 +73,17 @@ func my_walk_dir(path string) error {
 				}
 
 				// prompt for the user to delete the file
-				fmt.Printf("Do you want to delete the file %s. (k: add it to allowlist)? (y/n/k) (default is n): ", filepath.Join(path, file.Name()))
+				fmt.Printf("%s\ny: delete the file.\nn: Do not delete the file.\nk: Add the file to allowlist.\n(y/n/k) (n is default): ", filepath.Join(path, file.Name()))
 				var response string
 				fmt.Scanln(&response)
-				if response == "y" || response == "Y" {
+				switch response {
+				case "y", "Y":
 					err := os.Remove(filepath.Join(path, file.Name()))
 					if err != nil {
 						return fmt.Errorf("failed to delete file %s: %w", filepath.Join(path, file.Name()), err)
 					}
 					fmt.Printf("File %s deleted successfully.\n", filepath.Join(path, file.Name()))
-				} else if response == "k" {
+				case "k":
 					// write the absolute path to a file under the directory ~/.config/rm_exec/
 					configDir, err := os.UserConfigDir()
 					if err != nil {
