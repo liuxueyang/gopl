@@ -2,10 +2,13 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func remove_executable(path string) ([]string, error) {
@@ -57,6 +60,21 @@ func my_walk_dir(path string) error {
 				return err
 			}
 		} else {
+			// if file is a link, skip it
+			if file.Type()&os.ModeSymlink != 0 {
+				continue
+			}
+
+			// if the file is a script and it is executable, skip it
+			isTextExec, err := isTextExecutable(filepath.Join(path, file.Name()))
+			if err != nil {
+				fmt.Printf("Error checking if file %s is executable: %v\n", filepath.Join(path, file.Name()), err)
+				continue
+			}
+			if isTextExec {
+				continue
+			}
+
 			// if file is not a directory, check if it is executable
 			info, err := file.Info()
 			if err != nil {
@@ -150,4 +168,36 @@ func main() {
 	}
 
 	my_walk_dir(*dir_path)
+}
+
+func isTextExecutable(filePath string) (bool, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return false, fmt.Errorf("failed to open file %s: %w", filePath, err)
+	}
+	defer file.Close()
+
+	buffer := make([]byte, 512)
+	n, err := file.Read(buffer)
+	if err != nil && err != io.EOF {
+		return false, fmt.Errorf("failed to read file %s: %w", filePath, err)
+	}
+
+	if n >= 2 && buffer[0] == '#' && buffer[1] == '!' {
+		return true, nil // This is a script file
+	}
+
+	// Check if the file contains any null bytes
+	if !bytes.Contains(buffer[:n], []byte{0}) {
+		// check normal script file extensions
+		ext := strings.ToLower(filepath.Ext(filePath))
+		txtExts := []string{".sh", ".py", ".pl", ".rb", ".js", ".php", ".lua", ".awk"}
+		for _, txtExt := range txtExts {
+			if txtExt == ext {
+				return true, nil // This is a text executable file
+			}
+		}
+	}
+
+	return false, nil
 }
