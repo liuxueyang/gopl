@@ -44,10 +44,9 @@ func main() {
 
 		base := oldName[:len(oldName)-len(ext)]
 
+		base = strings.TrimSpace(base)
 		base = strings.TrimSuffix(base, "(Z-Library)")
-		base = strings.TrimSuffix(base, " ")
 		base = strings.TrimPrefix(base, "[Kmoe]")
-		base = strings.TrimPrefix(base, " ")
 		base = removeLastBracket(base)
 		base = strings.TrimSpace(base)
 
