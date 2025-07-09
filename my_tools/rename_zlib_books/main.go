@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 )
 
 var dir_path = flag.String("dir", "", "Directory path to rename zlib books")
@@ -50,6 +51,11 @@ func main() {
 		base = removeLastBracket(base)
 		base = strings.TrimSpace(base)
 
+		if len(base) == 0 {
+			// file name is enclosed in brackets
+			continue
+		}
+
 		newName := base + ext
 
 		if newName != oldName {
@@ -89,15 +95,28 @@ func main() {
 }
 
 func removeLastBracket(s string) string {
-	idxr1 := strings.LastIndex(s, "(")
-	idxr2 := strings.LastIndex(s, "（")
+	idxl1 := strings.LastIndex(s, "(")
+	idxl2 := strings.LastIndex(s, "（")
 
-	if idxr1 == -1 && idxr2 == -1 {
+	if idxl1 == -1 && idxl2 == -1 {
 		return s
-	} else if idxr1 > idxr2 {
-		return s[:idxr1]
+	} else if idxl1 > idxl2 {
+		idxr1 := strings.Index(s[idxl1:], ")")
+		if idxr1 != -1 {
+			idxr1 += idxl1
+			return s[:idxl1] + s[idxr1+1:]
+		} else {
+			return s
+		}
 	} else {
-		return s[:idxr2]
+		idxr2 := strings.Index(s[idxl2:], "）")
+		if idxr2 != -1 {
+			idxr2 += idxl2
+			_, sz := utf8.DecodeRuneInString(s[idxr2:])
+			return s[:idxl2] + s[idxr2+sz:]
+		} else {
+			return s
+		}
 	}
 }
 
