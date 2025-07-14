@@ -25,8 +25,6 @@ func main() {
 	}
 }
 
-type client chan<- string
-
 type Client struct {
 	name string
 	ch   chan<- string
