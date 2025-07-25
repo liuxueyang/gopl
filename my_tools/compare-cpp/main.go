@@ -64,9 +64,9 @@ func main() {
 	}
 
 	if same {
-		println("Outputs are the same.")
+		println("Success! Outputs are identical.")
 	} else {
-		println("Outputs differ.")
+		println("Outputs differ. Opening in VSCode for comparison...")
 
 		// 检查 vscode 是否可用
 		var programName string = "code"

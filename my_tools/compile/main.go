@@ -93,14 +93,8 @@ func compileFile(src string, execname string) error {
 	var cmd *exec.Cmd
 	srcFile := src
 
-	if islinux {
-		compileCommand := append([]string{"g++"}, cflags...)
-		compileCommand = append(compileCommand, "-o", execname, srcFile)
-		cmd = exec.Command("sh", append([]string{"-c"}, compileCommand...)...)
-	} else {
-		compileCommand := append(cflags, "-o", execname, srcFile)
-		cmd = exec.Command("g++", compileCommand...)
-	}
+	compileCommand := append(cflags, "-o", execname, srcFile)
+	cmd = exec.Command("g++", compileCommand...)
 
 	// 捕获标准输出和错误输出
 	output, err := cmd.CombinedOutput()
@@ -126,7 +120,7 @@ func runAndRedirect(execname, outputFile string) (err error) {
 	if islinux {
 		if *profile {
 			// 如果使用 -profile 标志，则使用 time 命令来测量执行时间
-			cmd = exec.CommandContext(ctx, "time", "./"+execname)
+			cmd = exec.CommandContext(ctx, "/usr/bin/time", "-v", "./"+execname)
 		} else {
 			cmd = exec.CommandContext(ctx, "./"+execname)
 		}
