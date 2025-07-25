@@ -108,7 +108,7 @@ func compileFile(src string) error {
 		return err
 	}
 	if len(output) > 0 {
-		fmt.Printf("%s\n", string(output))
+		fmt.Printf("%s", string(output))
 	}
 
 	return err
