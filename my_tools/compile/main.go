@@ -93,19 +93,21 @@ func compileFile(src string, execname string) error {
 	var cmd *exec.Cmd
 	srcFile := src
 
+	fmt.Println("Compiling source file:", srcFile)
+
 	compileCommand := append(cflags, "-o", execname, srcFile)
 	cmd = exec.Command("g++", compileCommand...)
 
 	// 捕获标准输出和错误输出
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("Compilation failed with error: %v\n", err)
-		fmt.Printf("Compiler output:\n%s\n", string(output))
+		fmt.Fprintf(os.Stderr, "Compilation failed with error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Compiler output:\n%s\n", string(output))
 		return err
 	}
 
 	if len(output) > 0 {
-		fmt.Printf("Compiler output:\n%s\n", string(output))
+		fmt.Printf("%s\n", string(output))
 	}
 
 	return nil
@@ -113,6 +115,8 @@ func compileFile(src string, execname string) error {
 
 func runAndRedirect(execname, outputFile string) (err error) {
 	var cmd *exec.Cmd
+
+	println("Running executable:", execname)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

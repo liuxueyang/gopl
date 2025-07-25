@@ -101,7 +101,17 @@ func compileFile(src string) error {
 		return fmt.Errorf("compile command not found in PATH: %v. Install it from the package ../compile", err)
 	}
 
-	return exec.Command("compile", options...).Run()
+	cmd := exec.Command("compile", options...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "compile failed with error: %v\n", err)
+		return err
+	}
+	if len(output) > 0 {
+		fmt.Printf("%s\n", string(output))
+	}
+
+	return err
 }
 
 func compareFiles(file1, file2 string) (bool, error) {
