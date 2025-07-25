@@ -2,14 +2,28 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
-var use_time = flag.Bool("time", false, "Use time command to measure execution time")
-var use_vscode_diff = flag.Bool("vscode", false, "Use VSCode diff tool for comparison")
+var use_profile = flag.Bool("profile", false, "Use time command to measure execution")
+
+var islinux bool
+
+func isLinux() bool {
+	uname_output, err := exec.Command("uname").Output()
+	if err != nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(string(uname_output)), "linux")
+}
+
+func init() {
+	islinux = isLinux()
+}
 
 func main() {
 	flag.Parse()
@@ -18,48 +32,35 @@ func main() {
 	src2 := flag.Arg(1)
 
 	if flag.NArg() != 2 {
-		println("Usage: compare-cpp [--time] [--vscode] <file1.cpp> <file2.cpp>")
-		return
+		fmt.Fprintf(os.Stderr, "Usage: compare-cpp [--time] [--vscode] <file1.cpp> <file2.cpp>")
+		os.Exit(1)
 	}
 
 	if len(src1) == 0 || len(src2) == 0 {
-		println("Both file paths must be provided.")
-		return
+		fmt.Fprintf(os.Stderr, "Both file paths must be provided.")
+		os.Exit(1)
 	}
 
 	basename1 := strings.TrimSuffix(filepath.Base(src1), ".cpp")
 	basename2 := strings.TrimSuffix(filepath.Base(src2), ".cpp")
-	execname1 := basename1 + ".out"
-	execname2 := basename2 + ".out"
 	output1 := basename1 + ".output"
 	output2 := basename2 + ".output"
 
-	err := compileFile(src1, execname1)
+	err := compileFile(src1)
 	if err != nil {
-		println("Error compiling first source file:", err.Error())
-		return
+		fmt.Fprintf(os.Stderr, "Error compiling the first source file: %v\n", err)
+		os.Exit(1)
 	}
-	err = compileFile(src2, execname2)
+	err = compileFile(src2)
 	if err != nil {
-		println("Error compiling second source file:", err.Error())
-		return
-	}
-
-	err = runAndRedirect(execname1, output1)
-	if err != nil {
-		println("Error executing first compiled file:", err.Error())
-		return
-	}
-	err = runAndRedirect(execname2, output2)
-	if err != nil {
-		println("Error executing second compiled file:", err.Error())
-		return
+		fmt.Fprintf(os.Stderr, "Error compiling the second source file: %v\n", err)
+		os.Exit(1)
 	}
 
 	same, err := compareFiles(output1, output2)
 	if err != nil {
-		println("Error comparing output files:", err.Error())
-		return
+		fmt.Fprintf(os.Stderr, "Error comparing output files: %v\n", err)
+		os.Exit(1)
 	}
 
 	if same {
@@ -67,84 +68,46 @@ func main() {
 	} else {
 		println("Outputs differ.")
 
-		// 检查 vimdiff 是否可用
-		if _, err := exec.LookPath("vimdiff"); err != nil {
-			println("vimdiff not found in PATH:", err.Error())
+		// 检查 vscode 是否可用
+		var programName string = "code"
+		if !islinux {
+			programName = "Code.exe"
+		}
+
+		if _, err := exec.LookPath(programName); err != nil {
+			fmt.Fprintf(os.Stderr, "%s not found in PATH: %v\n", programName, err)
 		} else {
-			println("vimdiff found, executing...")
-			diffCmd := exec.Command("vimdiff", output1, output2)
+			diffCmd := exec.Command(programName, "--diff", output1, output2)
 			diffCmd.Stdin = os.Stdin
 			diffCmd.Stdout = os.Stdout
 			diffCmd.Stderr = os.Stderr
+
 			err = diffCmd.Run()
 			if err != nil {
-				println("vimdiff execution error:", err.Error())
+				fmt.Fprintf(os.Stderr, "code execution error: %v\n", err)
+				os.Exit(1)
 			}
 		}
 	}
 }
 
-func isLinux() (bool, error) {
-	uname_output, err := exec.Command("uname").Output()
-	if err != nil {
-		println("Error executing uname command:", err.Error())
-		return false, err
+func compileFile(src string) error {
+	var options []string
+	if *use_profile {
+		options = append(options, "--profile")
 	}
-	return strings.Contains(strings.ToLower(string(uname_output)), "linux"), nil
-}
-
-func compileFile(src string, execname string) error {
-	cflags := "-std=c++23 -Wall -Wextra -DDEBUG -D_DEBUG -DLOCAL -g -O2 -Wno-unused-result"
-
-	if islinux {
-		cflags += " -I/home/rakuyo/cpp/header"
-	} else {
-		cflags += " -I\"C:\\Users\\rakuy\\cpp\\header\""
+	options = append(options, "--redirect", src)
+	if _, err := exec.LookPath("compile"); err != nil {
+		return fmt.Errorf("compile command not found in PATH: %v. Install it from the package ../compile", err)
 	}
 
-	compileCmd := "g++ " + cflags + " -o " + execname + " " + src
-
-	var err error
-	if islinux {
-		err = exec.Command("sh", "-c", compileCmd).Run()
-	} else {
-		err = exec.Command("cmd", "/C", compileCmd).Run()
-	}
-	return err
-}
-
-func runAndRedirect(execname, outputFile string) error {
-	// 创建输出文件
-	file, err := os.Create(outputFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	file_err, err := os.Create(strings.TrimSuffix(outputFile, ".output") + ".err")
-	if err != nil {
-		return err
-	}
-	defer file_err.Close()
-
-	// 执行程序并重定向输出
-	cmd := exec.Command("./" + execname)
-	cmd.Stdout = file
-	cmd.Stderr = file_err // 可选：也重定向错误输出
-
-	return cmd.Run()
+	return exec.Command("compile", options...).Run()
 }
 
 func compareFiles(file1, file2 string) (bool, error) {
-	var cmd *exec.Cmd
-
-	if islinux {
-		cmd = exec.Command("diff",
-			// "-Z",
-			file1, file2)
-	} else {
-		cmd = exec.Command("fc", "/B", file1, file2) // Windows 使用 fc
-	}
+	cmd := exec.Command("diff",
+		"-Z", // 忽略空格差异
+		file1, file2)
 
 	err := cmd.Run()
 	if err != nil {
@@ -158,15 +121,4 @@ func compareFiles(file1, file2 string) (bool, error) {
 	}
 
 	return true, nil // 文件相同
-}
-
-var islinux bool
-
-func init() {
-	var err error
-	islinux, err = isLinux()
-	if err != nil {
-		println("Error determining if the system is Linux:", err.Error())
-		os.Exit(1)
-	}
 }

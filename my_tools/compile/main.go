@@ -28,6 +28,14 @@ var redirect_output = flag.Bool("redirect", false, "Redirect output to file")
 
 var islinux bool
 
+func isLinux() bool {
+	uname_output, err := exec.Command("uname").Output()
+	if err != nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(string(uname_output)), "linux")
+}
+
 func init() {
 	islinux = isLinux()
 
@@ -70,14 +78,14 @@ func main() {
 
 	err := compileFile(src, execname)
 	if err != nil {
-		println("Error compiling source file:", err.Error())
-		return
+		fmt.Fprintf(os.Stderr, "Error compiling source file: %v", err.Error())
+		os.Exit(1)
 	}
 
 	err = runAndRedirect(execname, output)
 	if err != nil {
-		println("Error running executable:", err.Error())
-		return
+		fmt.Fprintf(os.Stderr, "Error running executable: %v", err.Error())
+		os.Exit(1)
 	}
 }
 
@@ -107,19 +115,6 @@ func compileFile(src string, execname string) error {
 	}
 
 	return nil
-}
-
-func isLinux() bool {
-	uname_output, err := exec.Command("uname").Output()
-	if err != nil {
-		return false
-	}
-	return strings.Contains(strings.ToLower(string(uname_output)), "linux")
-}
-
-func runWithoutRedirect(execname string) error {
-	// 直接运行程序，不重定向输出
-	return runAndRedirect(execname, "")
 }
 
 func runAndRedirect(execname, outputFile string) (err error) {
