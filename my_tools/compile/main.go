@@ -27,11 +27,11 @@ var cflags = []string{
 
 var (
 	colorInfo    = color.Cyan
-	colorError   = color.Red
-	colorSuccess = color.Green
 	colorWarning = color.Yellow
-	colorDebug   = color.Magenta
-	colorNotice  = color.Blue
+	// colorError   = color.Red
+	// colorSuccess = color.Green
+	// colorDebug   = color.Magenta
+	// colorNotice  = color.Blue
 )
 
 var profile = flag.Bool("profile", false, "Use time command to measure execution")

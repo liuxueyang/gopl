@@ -16,11 +16,11 @@ var islinux bool
 
 var (
 	colorInfo    = color.Cyan
-	colorError   = color.Red
 	colorSuccess = color.Green
 	colorWarning = color.Yellow
-	colorDebug   = color.Magenta
-	colorNotice  = color.Blue
+	// colorError   = color.Red
+	// colorDebug   = color.Magenta
+	// colorNotice  = color.Blue
 )
 
 func isLinux() bool {
