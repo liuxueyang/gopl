@@ -35,6 +35,7 @@ var (
 )
 
 var profile = flag.Bool("profile", false, "Use time command to measure execution")
+var dry_run = flag.Bool("dry-run", false, "Dry run, do not execute the compiled program")
 var redirect_output = flag.Bool("redirect", false, "Redirect output to file")
 
 var islinux bool
@@ -93,10 +94,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = runAndRedirect(execname, output)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error running executable: %v", err.Error())
-		os.Exit(1)
+	if !*dry_run {
+		err = runAndRedirect(execname, output)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error running executable: %v", err.Error())
+			os.Exit(1)
+		}
+	} else {
+		colorInfo("Dry run mode enabled, not executing the compiled program.")
 	}
 }
 
