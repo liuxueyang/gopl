@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/fatih/color"
 )
 
 var cflags = []string{
@@ -22,6 +24,15 @@ var cflags = []string{
 	"-O2",
 	"-Wno-unused-result",
 }
+
+var (
+	colorInfo    = color.Cyan
+	colorError   = color.Red
+	colorSuccess = color.Green
+	colorWarning = color.Yellow
+	colorDebug   = color.Magenta
+	colorNotice  = color.Blue
+)
 
 var profile = flag.Bool("profile", false, "Use time command to measure execution")
 var redirect_output = flag.Bool("redirect", false, "Redirect output to file")
@@ -93,7 +104,7 @@ func compileFile(src string, execname string) error {
 	var cmd *exec.Cmd
 	srcFile := src
 
-	fmt.Println("Compiling source file:", srcFile)
+	colorInfo("Compiling source file: %s", srcFile)
 
 	compileCommand := append(cflags, "-o", execname, srcFile)
 	cmd = exec.Command("g++", compileCommand...)
@@ -107,7 +118,7 @@ func compileFile(src string, execname string) error {
 	}
 
 	if len(output) > 0 {
-		fmt.Printf("%s\n", string(output))
+		colorWarning("%s", string(output))
 	}
 
 	return nil
@@ -116,7 +127,7 @@ func compileFile(src string, execname string) error {
 func runAndRedirect(execname, outputFile string) (err error) {
 	var cmd *exec.Cmd
 
-	println("Running executable:", execname)
+	colorInfo("Running executable: %s", execname)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

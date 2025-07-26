@@ -7,11 +7,21 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 var use_profile = flag.Bool("profile", false, "Use time command to measure execution")
-
 var islinux bool
+
+var (
+	colorInfo    = color.Cyan
+	colorError   = color.Red
+	colorSuccess = color.Green
+	colorWarning = color.Yellow
+	colorDebug   = color.Magenta
+	colorNotice  = color.Blue
+)
 
 func isLinux() bool {
 	uname_output, err := exec.Command("uname").Output()
@@ -64,9 +74,9 @@ func main() {
 	}
 
 	if same {
-		println("Success! Outputs are identical.")
+		colorSuccess("Success! Outputs are identical.")
 	} else {
-		println("Outputs differ. Opening in VSCode for comparison...")
+		colorWarning("Outputs differ. Opening in VSCode for comparison...")
 
 		// 检查 vscode 是否可用
 		var programName string = "code"
@@ -79,7 +89,6 @@ func main() {
 		} else {
 			diffCmd := exec.Command(programName, "--diff", output1, output2)
 			diffCmd.Stdin = os.Stdin
-			diffCmd.Stdout = os.Stdout
 			diffCmd.Stderr = os.Stderr
 
 			err = diffCmd.Run()
@@ -108,7 +117,7 @@ func compileFile(src string) error {
 		return err
 	}
 	if len(output) > 0 {
-		fmt.Printf("%s", string(output))
+		colorInfo("%s", string(output))
 	}
 
 	return err
