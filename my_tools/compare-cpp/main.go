@@ -11,8 +11,17 @@ import (
 	"github.com/fatih/color"
 )
 
+type SystemType int
+
+const (
+	Linux SystemType = iota
+	Windows
+	MacOS
+)
+
 var use_profile = flag.Bool("profile", false, "Use time command to measure execution")
-var islinux bool
+var is_unix bool
+var system_type SystemType
 
 var (
 	colorInfo    = color.Cyan
@@ -23,16 +32,26 @@ var (
 	// colorNotice  = color.Blue
 )
 
-func isLinux() bool {
+func check_system() bool {
 	uname_output, err := exec.Command("uname").Output()
 	if err != nil {
 		return false
 	}
-	return strings.Contains(strings.ToLower(string(uname_output)), "linux")
+
+	res := strings.ToLower(string(uname_output))
+	if strings.Contains(res, "linux") {
+		system_type = Linux
+	} else if strings.Contains(res, "darwin") {
+		system_type = MacOS
+	} else {
+		system_type = Windows
+	}
+
+	return system_type != Windows
 }
 
 func init() {
-	islinux = isLinux()
+	is_unix = check_system()
 }
 
 func main() {
@@ -80,7 +99,7 @@ func main() {
 
 		// 检查 vscode 是否可用
 		var programName string = "code"
-		if !islinux {
+		if !is_unix {
 			programName = "Code.exe"
 		}
 
@@ -124,8 +143,13 @@ func compileFile(src string) error {
 }
 
 func compareFiles(file1, file2 string) (bool, error) {
+	var diff_option string = "-Z" // 默认忽略空格差异
+
+	if system_type == MacOS {
+		diff_option = "-b" // MacOS 上使用 -b 忽略空格差异
+	}
 	cmd := exec.Command("diff",
-		"-Z", // 忽略空格差异
+		diff_option,
 		file1, file2)
 
 	err := cmd.Run()

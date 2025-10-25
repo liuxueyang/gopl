@@ -14,15 +14,19 @@ import (
 )
 
 var cflags = []string{
-	"-std=c++23",
-	"-Wall",
-	"-Wextra",
 	"-DDEBUG",
 	"-D_DEBUG",
 	"-DLOCAL",
-	"-g",
-	"-O2",
+	"-std=c++2a",
+	"-Wall",
+	"-Wextra",
+	"-fstack-protector-all",
+	"-fsanitize=address",
+	"-fsanitize=undefined",
+	"-Wno-unused-const-variable",
 	"-Wno-unused-result",
+	"-O2",
+	"-g",
 }
 
 var (
@@ -38,18 +42,20 @@ var profile = flag.Bool("profile", false, "Use time command to measure execution
 var dry_run = flag.Bool("dry-run", false, "Dry run, do not execute the compiled program")
 var redirect_output = flag.Bool("redirect", false, "Redirect output to file")
 
-var islinux bool
+var isunix bool
 
-func isLinux() bool {
+func isUnix() bool {
 	uname_output, err := exec.Command("uname").Output()
 	if err != nil {
 		return false
 	}
-	return strings.Contains(strings.ToLower(string(uname_output)), "linux")
+
+	res := strings.ToLower(string(uname_output))
+	return strings.Contains(res, "linux") || strings.Contains(res, "darwin")
 }
 
 func init() {
-	islinux = isLinux()
+	isunix = isUnix()
 
 	home_path, err := os.UserHomeDir()
 	if err != nil {
@@ -76,7 +82,7 @@ func main() {
 
 	basename := strings.TrimSuffix(filepath.Base(src), ".cpp")
 	var execname string
-	if islinux {
+	if isunix {
 		execname = basename + ".out"
 	} else {
 		execname = basename + ".exe"
@@ -112,6 +118,8 @@ func compileFile(src string, execname string) error {
 	colorInfo("Compiling source file: %s", srcFile)
 
 	compileCommand := append(cflags, "-o", execname, srcFile)
+	colorInfo("compileCommand = %v\n", compileCommand)
+
 	cmd = exec.Command("g++", compileCommand...)
 
 	// 捕获标准输出和错误输出
@@ -137,7 +145,7 @@ func runAndRedirect(execname, outputFile string) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if islinux {
+	if isunix {
 		if *profile {
 			// 如果使用 -profile 标志，则使用 time 命令来测量执行时间
 			cmd = exec.CommandContext(ctx, "/usr/bin/time", "-v", "./"+execname)
