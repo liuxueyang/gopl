@@ -19,7 +19,11 @@ import (
 // It handles both directions concurrently and exits cleanly when either side closes the connection.
 
 func main() {
-	conn, err := net.Dial("tcp", "localhost:8080")
+	tcp_addr := net.TCPAddr{
+		Port: 8080,
+	}
+
+	conn, err := net.DialTCP("tcp", nil, &tcp_addr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,11 +41,12 @@ func main() {
 			log.Printf("io.Copy error: %v", err)
 		}
 		log.Println("Connection closed by server")
+		conn.CloseRead()
 		done <- struct{}{}
 	}()
 
 	mustCopy(conn, os.Stdin)
-	conn.Close()
+	conn.CloseWrite()
 	<-done
 }
 
