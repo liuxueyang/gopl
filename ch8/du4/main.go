@@ -9,9 +9,11 @@ import (
 	"time"
 )
 
-var verbose = flag.Bool("v", false, "enable verbose output")
-var sema = make(chan struct{}, 20)
-var done = make(chan struct{})
+var (
+	verbose = flag.Bool("v", false, "enable verbose output")
+	sema    = make(chan struct{}, 20)
+	done    = make(chan struct{})
+)
 
 func main() {
 	flag.Parse()
@@ -111,6 +113,10 @@ func walkDir(dir string, fileSizes chan<- int64, wg *sync.WaitGroup) {
 	}
 
 	for _, entry := range dirents(dir) {
+		if cancelled() {
+			return
+		}
+
 		if entry.IsDir() {
 			wg.Add(1)
 			subdir := filepath.Join(dir, entry.Name())
