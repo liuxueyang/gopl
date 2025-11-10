@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const timeoutDuration = 10 * time.Second
+
 func echo(c net.Conn, shout string, delay time.Duration) {
 	fmt.Fprintln(c, "\t", strings.ToUpper(shout))
 	time.Sleep(delay)
@@ -33,8 +35,6 @@ func main() {
 		go handleConn(conn)
 	}
 }
-
-const timeoutDuration = 10 * time.Second
 
 // using select statement, add a timeout to the echo server so that it
 // disconnects any client that does not send a message within 10 seconds

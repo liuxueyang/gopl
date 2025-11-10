@@ -14,6 +14,18 @@ var (
 	sema    = make(chan struct{}, 20) // limit to 20 concurrent goroutines
 )
 
+type Entry struct {
+	idx  int
+	size int64
+}
+
+type RootEntry struct {
+	idx    int
+	name   string
+	nbytes int64
+	nfiles int64
+}
+
 func main() {
 	flag.Parse()
 	roots := flag.Args()
@@ -21,17 +33,24 @@ func main() {
 	if len(roots) == 0 {
 		roots = []string{"."}
 	}
+	rootEntries := make([]RootEntry, len(roots))
+	for i, dirName := range roots {
+		rootEntries[i] = RootEntry{
+			idx:  i,
+			name: dirName,
+		}
+	}
 
 	var wg sync.WaitGroup
 
-	fileSizes := make(chan int64)
+	fileSizes := make(chan Entry)
 	var tick <-chan time.Time
 
 	if *verbose {
 		tick = time.Tick(500 * time.Millisecond)
 	}
 
-	for _, root := range roots {
+	for _, root := range rootEntries {
 		wg.Add(1)
 		go walkDir(root, fileSizes, &wg)
 	}
@@ -41,25 +60,31 @@ func main() {
 		close(fileSizes)
 	}()
 
-	var nfiles, nbytes int64
-
 	for {
 		select {
 		case <-tick:
-			printDiskUsage(nfiles, nbytes)
+			printDiskUsageV1(rootEntries)
 
-		case size, ok := <-fileSizes:
+		case entry, ok := <-fileSizes:
 			if !ok {
-				printDiskUsage(nfiles, nbytes)
+				printDiskUsageV1(rootEntries)
 				if *verbose {
 					fmt.Println("Done")
 				}
 				return
 			} else {
-				nfiles++
-				nbytes += size
+				idx := entry.idx
+				rootEntries[idx].nfiles++
+				rootEntries[idx].nbytes += entry.size
 			}
 		}
+	}
+}
+
+func printDiskUsageV1(roots []RootEntry) {
+	for _, entry := range roots {
+		fmt.Printf("%s:\n", entry.name)
+		printDiskUsage(entry.nfiles, entry.nbytes)
 	}
 }
 
@@ -82,14 +107,16 @@ func dirents(dir string) []os.DirEntry {
 	return entries
 }
 
-func walkDir(dir string, fileSizes chan<- int64, wg *sync.WaitGroup) {
+func walkDir(dir RootEntry, fileSizes chan<- Entry, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	for _, entry := range dirents(dir) {
+	for _, entry := range dirents(dir.name) {
 		if entry.IsDir() {
 			wg.Add(1)
-			subdir := filepath.Join(dir, entry.Name())
-			go walkDir(subdir, fileSizes, wg)
+			subdir := filepath.Join(dir.name, entry.Name())
+			newDir := dir
+			newDir.name = subdir
+			go walkDir(newDir, fileSizes, wg)
 		} else {
 			fileInfo, err := entry.Info()
 			if err != nil {
@@ -101,7 +128,7 @@ func walkDir(dir string, fileSizes chan<- int64, wg *sync.WaitGroup) {
 			if fileSize > 1024*1024*1024 {
 				fmt.Printf("file %s, size: %.1f GB, dir: %s\n", fileInfo.Name(), float64(fileSize)/1e9, dir)
 			}
-			fileSizes <- fileSize
+			fileSizes <- Entry{dir.idx, fileSize}
 			// fileSizes <- fileInfo.Size()
 		}
 	}
