@@ -21,6 +21,11 @@ func main() {
 func sanitizeFilename(filename string) string {
 	re := regexp.MustCompile(`[<>:"/\\|?*]`)
 	sanitized := re.ReplaceAllString(filename, "_")
+	sanitized, _ = strings.CutPrefix(sanitized, "Codeforces - ")
+	sanitized, _ = strings.CutPrefix(sanitized, "AtCoder - ")
+	sanitized = validateAtCoder(sanitized)
+	sanitized = validateCodeforces(sanitized)
+
 	sanitized = strings.TrimSpace(sanitized)
 	return sanitized
 }
@@ -38,6 +43,8 @@ func companionHandler(w http.ResponseWriter, req *http.Request) {
 	if err := json.Unmarshal(body, &problem); err != nil {
 		log.Fatalf("JSON unmarshaling failed: %v", err)
 	}
+
+	// log.Printf("problem = %#v\n\nbody=%#v\n", problem, string(body))
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
